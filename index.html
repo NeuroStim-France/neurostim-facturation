@@ -119,6 +119,11 @@
 
 <!-- ── APP CONTAINER ── -->
 <div id="root" style="display:none"></div>
+<div id="debug" style="position:fixed;bottom:10px;right:10px;background:#1a5276;color:#fff;padding:10px 14px;border-radius:8px;font-size:12px;font-family:monospace;z-index:99999;max-width:300px;line-height:1.8">
+  Auth: <span id="dbg-auth">waiting...</span><br>
+  NS_AUTH: <span id="dbg-ns">null</span><br>
+  Root: <span id="dbg-root">hidden</span>
+</div>
 
 <script>
 // ── Auth state & role management ──
@@ -128,7 +133,18 @@ let userRole = null; // 'admin' | 'saisie'
 // Expose role to React app via global
 window.NS_AUTH = { user: null, role: null };
 
+// Debug updater
+function dbg(key, val) {
+  const el = document.getElementById('dbg-' + key);
+  if (el) el.textContent = val;
+}
+setInterval(function() {
+  dbg('ns', window.NS_AUTH ? JSON.stringify({user: !!window.NS_AUTH.user, role: window.NS_AUTH.role}) : 'null');
+  dbg('root', document.getElementById('root') ? document.getElementById('root').style.display : '?');
+}, 500);
+
 auth.onAuthStateChanged(async function(user) {
+  dbg('auth', user ? 'logged in: ' + user.email : 'not logged in');
   if (!user) {
     showAuthScreen();
     return;
@@ -173,6 +189,7 @@ function showAuthScreen() {
 }
 
 function showApp() {
+  dbg('auth', 'showApp() called');
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('cpw-overlay').style.display = 'none';
   document.getElementById('root').style.display = 'block';
@@ -216,7 +233,9 @@ async function doChangePw() {
   if (nw !== cf) { errEl.textContent = 'Les mots de passe ne correspondent pas.'; return; }
   try {
     await currentUser.updatePassword(nw);
+    dbg('auth', 'password changed, updating firestore...');
     await db.doc('users/' + currentUser.uid).update({ mustChangePassword: false });
+    dbg('auth', 'firestore updated, calling showApp...');
     window.NS_AUTH.mustChangePassword = false;
     showApp();
   } catch(e) {
