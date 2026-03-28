@@ -125,10 +125,20 @@ function mountApp(){
   document.getElementById('cpw-overlay').style.display='none';
   d('d-mount', typeof window._mountApp);
   if(typeof window._mountApp === 'function'){
-    window._mountApp();
-    d('d-auth','done');
+    try {
+      window._mountApp();
+      d('d-auth','done');
+      // Check if root has content after 500ms
+      setTimeout(function(){
+        var r = document.getElementById('root');
+        d('d-mount', r ? 'children:'+r.children.length+' html:'+r.innerHTML.length : 'no root');
+      }, 500);
+    } catch(e) {
+      document.getElementById('root').innerHTML='<div style="padding:40px;color:red;font-family:sans-serif">Erreur mount: '+e.message+'<br>'+e.stack+'</div>';
+      d('d-auth','ERROR:'+e.message);
+    }
   } else {
-    document.getElementById('root').innerHTML='<div style="padding:40px;color:orange;font-family:sans-serif">_mountApp introuvable — bundle non chargé?</div>';
+    document.getElementById('root').innerHTML='<div style="padding:40px;color:orange;font-family:sans-serif">_mountApp introuvable</div>';
     d('d-auth','_mountApp missing');
   }
 }
