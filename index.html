@@ -179,8 +179,21 @@ function showApp() {
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('cpw-overlay').style.display='none';
   document.getElementById('root').style.display='block';
-  if(window.mountReactApp) window.mountReactApp();
-  else setTimeout(function(){ if(window.mountReactApp) window.mountReactApp(); },300);
+  dbg('auth','root shown, mountReactApp='+typeof window.mountReactApp);
+  if(window.mountReactApp) {
+    try {
+      window.mountReactApp();
+      dbg('auth','React mounted OK');
+    } catch(e) {
+      dbg('auth','React ERROR: '+e.message);
+    }
+  } else {
+    dbg('auth','mountReactApp not found, retrying...');
+    setTimeout(function(){
+      dbg('auth','retry: mountReactApp='+typeof window.mountReactApp);
+      if(window.mountReactApp) window.mountReactApp();
+    },500);
+  }
 }
 async function doLogin() {
   const email=document.getElementById('auth-email').value.trim();
