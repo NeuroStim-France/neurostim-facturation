@@ -180,20 +180,26 @@ function showApp() {
   document.getElementById('cpw-overlay').style.display='none';
   document.getElementById('root').style.display='block';
   dbg('auth','root shown, mountReactApp='+typeof window.mountReactApp);
-  if(window.mountReactApp) {
-    try {
-      window.mountReactApp();
-      dbg('auth','React mounted OK');
-    } catch(e) {
-      dbg('auth','React ERROR: '+e.message);
-    }
-  } else {
-    dbg('auth','mountReactApp not found, retrying...');
-    setTimeout(function(){
-      dbg('auth','retry: mountReactApp='+typeof window.mountReactApp);
-      if(window.mountReactApp) window.mountReactApp();
-    },500);
-  }
+  // Override mountReactApp to add extra debug
+  const origMount = window.mountReactApp;
+  window.mountReactApp = function() {
+    const el = document.getElementById("root");
+    dbg('auth', 'mounting, el='+!!el+' origMount='+typeof origMount);
+    if(!el) return;
+    // First test: inject plain HTML to confirm #root is visible
+    el.innerHTML = '<div style="padding:40px;font-size:20px;color:#1a5276">✓ Root visible — React chargement...</div>';
+    setTimeout(function() {
+      try {
+        el.innerHTML = '';
+        if(origMount) origMount();
+        dbg('auth','React render called');
+      } catch(e) {
+        el.innerHTML = '<div style="padding:40px;color:red">Erreur: '+e.message+'</div>';
+        dbg('auth','ERROR: '+e.message);
+      }
+    }, 500);
+  };
+  if(window.mountReactApp) window.mountReactApp();
 }
 async function doLogin() {
   const email=document.getElementById('auth-email').value.trim();
